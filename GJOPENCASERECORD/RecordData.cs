@@ -63,10 +63,37 @@ namespace GJOPENCASERECORD
                 if (dt != null)
                 {
                     entityList = datatableToList(dt,ref ERRFLAG);
+                    deleteSameData(entityList, ref ERRFLAG);
                     insertDataToDataBase(entityList, ref ERRFLAG);
                     moveFileDir(filePath, ref ERRFLAG);
                 }
             });
+        }
+        /// <summary>
+        /// 根据时间 判断数据库中是否存在当天数据，
+        /// 如果存在，删除
+        /// </summary>
+        /// <param name="entityList"></param>
+        public void deleteSameData(List<OpenRecord> entityList,ref bool ERRFLAG)
+        {
+            if (entityList.Count>0)
+            {
+                try
+                {
+                    string recordDate = DateTime.Parse(entityList.First().recordTime, new DateTimeFormatInfo()
+                    {
+                        FullDateTimePattern = "yyyy-MM-dd HH:mi:ss"
+                    }).ToString("yyyy-MM-dd");
+                    string sql_delete = "delete gj_opencaserecords t where to_char(t.记录时间,'yyyy-MM-dd') = '"+recordDate+"'";
+                    int count = ORACLEHelper.ExecuteSql(sql_delete);
+                }
+                catch (Exception err)
+                {
+                    ERRFLAG = true;
+                    AppInfo.WriteLogs(err.Message);
+                }
+                
+            }
         }
         /// <summary>
         /// 将文件转移到某个目录
@@ -228,6 +255,10 @@ namespace GJOPENCASERECORD
         /// <param name="entityList"></param>
         private void insertDataToDataBase(List<OpenRecord> entityList, ref bool ERRFLAG)
         {
+            if (ERRFLAG)
+            {
+                return;
+            }
             int minCount = 0;
             try
             {
@@ -238,13 +269,15 @@ namespace GJOPENCASERECORD
                     for (int i = minCount; i < maxCount; i++)
                     {
                         OpenRecord entity = entityList[i];
-                        sql.Append("select '").Append(entity.lineName + "' 线路名称,'").Append(entity.carNum + "' 车牌号,'").Append(entity.owiner + "' 持卡人,'").Append(entity.ouCardNum + "' 换出内胆编号,'").Append(entity.inCardNum + " ' 换入内胆编号,'").Append(entity.recordTime).Append("' 记录时间 from dual ");
+                        sql.Append("select '").Append(entity.lineName + "' 线路名称,'").Append(entity.carNum + "' 车牌号,'").Append(entity.owiner + "' 持卡人,'").Append(entity.ouCardNum + "' 换出内胆编号,'").Append(entity.inCardNum + " ' 换入内胆编号,to_date('").Append(entity.recordTime).Append("','yyyy-MM-dd HH24:mi:ss') 记录时间 from dual ");
                         if (i < maxCount - 1)
                         {
                             sql.Append(" union all ");
                         }
                     }
                     sql.Append(" )");
+                    //AppInfo.WriteLogs(sql.ToString());
+                    //ORACLEHelper helper = new ORACLEHelper();
                     ORACLEHelper.ExecuteSql(sql.ToString());
                     //bool result = RCD.RCDB.Execute(sql.ToString());
                     minCount += 30;

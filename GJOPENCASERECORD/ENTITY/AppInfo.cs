@@ -38,9 +38,9 @@ namespace GJOPENCASERECORD.ENTITY
             try
             {
                 GetAppSettings();
-                RCD.RCDB.ConnectString = ConnectString;
-                RCD.RCDB.InitValue("oledb", DatabaseType);
-                ORACLEHelper.connectionString = ConnectString;
+                //RCD.RCDB.ConnectString = ConnectString;
+                //RCD.RCDB.InitValue("oledb", DatabaseType);
+                //ORACLEHelper.connectionString = ConnectString;
                 //oracleDb.ConnectString = ConnectString;
                 //oracleDb.openConnection();
             }
